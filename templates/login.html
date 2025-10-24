@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | LexInsight</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+    <h1>LexInsight</h1>
+</header>
+
+<!-- HERO SECTION -->
+<section id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-content">
+        <h1 id="hero-title">Analyze Your Cases</h1>
+        <p id="hero-subtitle">Manage documents, search intelligently, and leverage AI-powered insights effortlessly.</p>
+        <form method="POST" id="login-form">
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+        <a href="{{ url_for('register') }}" class="register-btn">Don't have an account? Register here</a>
+    </div>
+</section>
+
+<!-- FEATURES SECTION -->
+<section id="features">
+    <div class="feature reveal">
+        <div class="feature-text">
+            <h2>Powerful Search</h2>
+            <p>Quickly locate clauses and key documents with our advanced keyword search. Navigate large case files in seconds.</p>
+        </div>
+        <div class="feature-video">
+            <video src="{{ url_for('static', filename='vedios/search.mp4') }}" autoplay muted loop></video>
+        </div>
+    </div>
+
+    <div class="feature reverse reveal">
+        <div class="feature-video">
+            <video src="{{ url_for('static', filename='vedios/semantic.mp4') }}" autoplay muted loop></video>
+        </div>
+        <div class="feature-text">
+            <h2>Semantic Search</h2>
+            <p>Ask complex questions and get precise answers. Understand legal clauses and relationships intelligently.</p>
+        </div>
+    </div>
+
+    <div class="feature reveal">
+        <div class="feature-text">
+            <h2>AI Bot Assistance</h2>
+            <p>Interact with our AI bot for instant legal insights, summarization, and case analysis to save valuable time.</p>
+        </div>
+        <div class="feature-video">
+            <video src="{{ url_for('static', filename='vedios/aibot.mp4') }}" autoplay muted loop></video>
+        </div>
+    </div>
+</section>
+
+<script>
+    // Three.js Torus Animation
+    const canvas = document.getElementById('hero-canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({canvas, alpha:true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const geometry = new THREE.TorusGeometry(10, 3, 16, 100);
+    const material = new THREE.MeshStandardMaterial({ color: 0xC9A227, wireframe: true });
+    const torus = new THREE.Mesh(geometry, material);
+    scene.add(torus);
+
+    const light = new THREE.PointLight(0xC9A227, 1, 100);
+    light.position.set(20, 20, 20);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+    camera.position.z = 30;
+
+    function animateTorus() {
+        requestAnimationFrame(animateTorus);
+        torus.rotation.x += 0.005;
+        torus.rotation.y += 0.005;
+        renderer.render(scene, camera);
+    }
+    animateTorus();
+
+    // Hero text animation
+    const title = document.getElementById('hero-title');
+    const subtitle = document.getElementById('hero-subtitle');
+    const form = document.getElementById('login-form');
+    window.addEventListener('load', () => {
+        setTimeout(()=>{title.classList.add('slide-in');}, 200);
+        setTimeout(()=>{subtitle.classList.add('slide-in');}, 600);
+        setTimeout(()=>{form.classList.add('slide-in');}, 1000);
+    });
+
+    // Scroll-triggered feature reveal
+    const reveals = document.querySelectorAll('.reveal');
+    function revealOnScroll() {
+        const windowHeight = window.innerHeight;
+        reveals.forEach(reveal => {
+            const top = reveal.getBoundingClientRect().top;
+            const revealPoint = 150;
+            if(top < windowHeight - revealPoint){
+                reveal.classList.add('active');
+            }
+        });
+    }
+    window.addEventListener('scroll', revealOnScroll);
+    revealOnScroll();
+</script>
+
+</body>
+</html>

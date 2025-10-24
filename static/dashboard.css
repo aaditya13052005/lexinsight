@@ -1,0 +1,186 @@
+/* ------------------------
+   GLOBAL STYLES
+------------------------ */
+body {
+    margin: 0;
+    font-family: 'Lobster Two', cursive, Arial, sans-serif;
+    background-color: #1B263B;
+    color: #FFFFFF;
+    overflow-x: hidden;
+}
+
+/* THREE.js canvas */
+#dashboard-canvas {
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    z-index:-1;
+}
+
+/* ------------------------
+   HEADER
+------------------------ */
+.header {
+    width: 100%;
+    height: 60px;
+    background-color: rgba(46, 59, 78, 0.8); /* glassmorphism */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    box-sizing: border-box;
+    color: #C9A227;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(15px);
+    border-bottom: 2px solid #C9A227;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: bold;
+    color: #C9A227;
+}
+
+.logout-btn {
+    background: #C9A227;
+    color: #1B263B;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background 0.3s, transform 0.2s;
+}
+.logout-btn:hover {
+    background: #FFD700;
+    transform: scale(1.05);
+}
+
+/* ------------------------
+   PAGE TITLE
+------------------------ */
+.page-title-wrapper {
+    text-align: center;
+    margin: 20px 0;
+}
+.page-title {
+    font-size: 2em;
+    font-weight: bold;
+    color: #FFD700;
+    margin: 0;
+}
+
+/* ------------------------
+   DASHBOARD
+------------------------ */
+.dashboard {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 0 20px 40px 20px;
+}
+
+/* New case form */
+.new-case-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s ease;
+}
+.new-case-form.active { 
+    opacity:1; 
+    transform: translateY(0); 
+}
+.new-case-form input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    font-size: 1em;
+}
+.new-case-form button {
+    background: #C9A227;
+    color: #1B263B;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s, transform 0.2s;
+}
+.new-case-form button:hover {
+    background: #FFD700;
+    transform: scale(1.05);
+}
+
+/* Case list grid */
+.case-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+    gap: 20px;
+}
+
+/* Case card */
+.case-card {
+    background: rgba(46,59,78,0.6);
+    border-radius: 15px;
+    padding: 20px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    border: 1px solid rgba(201,162,39,0.4);
+    cursor: pointer;
+    opacity: 0.5;
+    transform: translateY(20px);
+    transition: all 0.6s ease, transform 0.3s, border 0.3s, box-shadow 0.3s;
+}
+.case-card.active {
+    opacity:1;
+    transform: translateY(0);
+}
+.case-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    border: 1px solid #FFD700;
+}
+
+.case-card h2 { 
+    color: #FFD700; 
+    margin:0 0 10px; 
+}
+.case-card p { 
+    color: #DCDCDC; 
+    margin:0; 
+}
+
+/* No cases message */
+.no-cases {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 1.2em;
+    color: #CCCCCC;
+    opacity:0;
+    transform: translateY(20px);
+    transition: all 0.6s ease;
+}
+.no-cases.active { 
+    opacity:1; 
+    transform: translateY(0); 
+}
+
+/* ------------------------
+   SLIDE-IN ANIMATION
+------------------------ */
+.slide-in { 
+    opacity:0; 
+    transform: translateY(20px); 
+    transition: all 0.8s ease; 
+}
+.slide-in.active { 
+    opacity:1; 
+    transform: translateY(0); 
+}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Case Viewer | LexInsight</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='case.css') }}">
+    <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="LexInsight Logo">
+    <h1>LexInsight</h1>
+</header>
+
+<div class="container">
+    <!-- LEFT PANEL -->
+    <div id="left-panel" class="panel">
+        <!-- TAB BUTTONS -->
+        <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="upload">Upload PDF</button>
+            <button class="tab-btn" data-tab="search">Keyword Search</button>
+            <button class="tab-btn" data-tab="semantic">Semantic Chat</button>
+            <button class="tab-btn" data-tab="scout">Scouting</button>
+            <button class="tab-btn" data-tab="summarize">Summarize PDF</button>
+        </div>
+
+        <!-- TAB CONTENT -->
+        <div class="tab-content">
+
+            <!-- UPLOAD PDF -->
+            <div class="pane active" id="upload">
+                <form id="upload-form" enctype="multipart/form-data">
+                    <input type="file" name="pdf" accept="application/pdf" required>
+                    <button type="submit">Upload</button>
+                </form>
+
+                <h3>Uploaded PDFs</h3>
+                <ul id="file-list">
+                    {% for file in files %}
+                    <li data-url="{{ file.file_url }}">{{ file.file_name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- KEYWORD SEARCH -->
+            <div class="pane" id="search">
+                <h3>Search PDFs</h3>
+                <input type="text" id="search-input" placeholder="Search in PDFs">
+                <button id="search-btn">Search</button>
+
+                <h4>Results:</h4>
+                <ul id="hits-list"></ul>
+            </div>
+
+            <!-- SEMANTIC CHAT -->
+            <div class="pane" id="semantic">
+                <h3>Semantic Chat</h3>
+                <input type="text" id="semantic-input" placeholder="Ask about clauses, termination etc.">
+                <button id="semantic-btn">Search</button>
+
+                <h4>Results:</h4>
+                <ul id="semantic-results"></ul>
+            </div>
+
+            <!-- SCOUTING -->
+            <div class="pane" id="scout">
+                <h3>Research Scouting</h3>
+                <input type="text" id="scout-input" placeholder="Enter topic or keywords">
+                <button id="scout-btn">Search Articles</button>
+
+                <h4>Results:</h4>
+                <ul id="scout-results"></ul>
+            </div>
+
+            <!-- SUMMARIZE PDF -->
+            <div class="pane" id="summarize">
+                <h3>Legal PDF Summarization</h3>
+                <form id="summarize-form" enctype="multipart/form-data">
+                    <input type="file" name="pdf" accept="application/pdf" required>
+                    <button type="submit">Generate Summary</button>
+                </form>
+
+                <h4>Summary:</h4>
+                <div id="summary-result" class="summary-box">No summary yet.</div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- CENTER PANEL: PDF Viewer -->
+    <div id="center-panel" class="panel">
+        <div id="pdf-container"></div>
+    </div>
+</div>
+
+<!-- FLOATING AI CHAT ICON -->
+<div id="ai-chat-icon">💬</div>
+<div id="ai-chat-box" class="hidden">
+    <h4>AI Chat</h4>
+    <textarea id="ai-input" placeholder="Ask about this case..."></textarea>
+    <button id="ai-send-btn">Send</button>
+    <div id="ai-response"></div>
+</div>
+
+<input type="hidden" id="case-id" value="{{ case_id }}">
+
+<script src="{{ url_for('static', filename='case.js') }}"></script>
+</body>
+</html>

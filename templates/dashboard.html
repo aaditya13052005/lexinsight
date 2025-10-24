@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | LexInsight</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+</head>
+<body>
+
+<!-- HERO CANVAS (Animated background placeholder) -->
+<canvas id="dashboard-canvas"></canvas>
+
+<!-- HEADER -->
+<header class="header">
+    <div class="header-left">
+        <span class="logo">LexInsight</span>
+    </div>
+    <div class="header-right">
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </div>
+</header>
+
+<!-- PAGE TITLE -->
+<div class="page-title-wrapper">
+    <h1 class="page-title">Your Cases</h1>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<main class="dashboard">
+    <!-- New Case Form -->
+    <form method="POST" action="{{ url_for('create_case_route') }}" class="new-case-form slide-in">
+        <input type="text" name="title" placeholder="New Case Title" required>
+        <button type="submit">Create Case</button>
+    </form>
+
+    <!-- Case List -->
+    {% if cases %}
+    <div class="case-list">
+        {% for case in cases %}
+        <div class="case-card slide-in" onclick="window.location.href='{{ url_for('case_view', case_id=case.id) }}'">
+            <h2>{{ case.title }}</h2>
+            <p>Created at: {{ case.created_at }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="no-cases slide-in">No cases yet. Create one above!</p>
+    {% endif %}
+</main>
+
+<script>
+    // ------------------------
+    // THREE.JS CANVAS SETUP (No torus/particles)
+    // ------------------------
+    const canvas = document.getElementById('dashboard-canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({canvas, alpha:true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    // Just a subtle background color (no objects yet)
+    scene.background = new THREE.Color(0x1B263B); // deep navy
+
+    camera.position.z = 30;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // ------------------------
+    // SLIDE-IN ANIMATION
+    // ------------------------
+    const slideEls = document.querySelectorAll('.slide-in');
+    function revealOnScroll() {
+        const windowHeight = window.innerHeight;
+        slideEls.forEach(el => {
+            const top = el.getBoundingClientRect().top;
+            if(top < windowHeight - 100){
+                el.classList.add('active');
+            }
+        });
+    }
+    window.addEventListener('scroll', revealOnScroll);
+    revealOnScroll();
+</script>
+
+</body>
+</html>
