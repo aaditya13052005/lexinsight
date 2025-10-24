@@ -1,0 +1,8 @@
+flask
+numpy
+spacy
+PyMuPDF
+sentence-transformers
+requests
+supabase
+gunicorn
