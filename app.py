@@ -39,7 +39,8 @@ CROSSREF_API_URL = "https://api.crossref.org/works"
 # spaCy embedding model (load once)
 # ------------------------
 print("[DEBUG] Loading spaCy model...")
-nlp = spacy.load("en_core_web_md")
+nlp = spacy.load("en_core_web_sm")
+
 print("[DEBUG] spaCy model loaded successfully.")
 
 def get_embedding_spacy(text: str):
