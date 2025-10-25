@@ -76,6 +76,7 @@ def download_file_bytes(file_url: str):
     else:
         raise Exception(f"Failed to download file: {r.status_code}")
 
+
 # ------------------------
 # SEMANTIC SEARCH FUNCTIONS
 # ------------------------
