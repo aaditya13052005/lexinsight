@@ -354,6 +354,7 @@ def api_semantic_search():
 # 3️⃣ Research Scouting Agent
 
 
+
 def fetch_articles(topic, max_results=5):
     """
     Fetch legal articles/news from Google News RSS (India, legal context) based on a topic.
