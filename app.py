@@ -6,6 +6,8 @@ import io
 import uuid
 import requests
 import os
+import feedparser
+from datetime import datetime
 
 # --- project helpers ---
 from supabase_client import (
@@ -350,31 +352,48 @@ def api_semantic_search():
 
 
 # 3️⃣ Research Scouting Agent
+
+
+def fetch_articles(topic, max_results=5):
+    """
+    Fetch legal articles/news from Google News RSS (India, legal context) based on a topic.
+    """
+    query = topic.replace(" ", "+")
+    rss_url = f"https://news.google.com/rss/search?q={query}+legal&hl=en-IN&gl=IN&ceid=IN:en"
+    feed = feedparser.parse(rss_url)
+    results = []
+
+    for entry in feed.entries[:max_results]:
+        published = getattr(entry, "published", "")
+        try:
+            published_date = datetime.strptime(published, "%a, %d %b %Y %H:%M:%S %Z").strftime("%Y-%m-%d")
+        except Exception:
+            published_date = published
+
+        results.append({
+            "title": entry.title,
+            "link": entry.link,
+            "summary": getattr(entry, "summary", ""),
+            "authors": getattr(entry, "author", "Unknown"),
+            "published": published_date
+        })
+
+    return results
+
 @app.route("/api/scout", methods=["POST"])
 def api_scout():
     """
-    Searches legal news, judgments, or knowledge sources based on keyword.
-    (For now, uses Cohere API to simulate legal research.)
+    Free Research Scouting: returns legal news/articles from Google News RSS.
+    Works for both web app and AI agent.
     """
     data = request.get_json(force=True)
-    topic = data.get("topic", "").strip()
-    if not topic:
-        return jsonify({"error": "Missing 'topic'"}), 400
+    topic = data.get("topic") or data.get("query")  # handle both frontend and AI agent keys
+    if not topic or not topic.strip():
+        return jsonify({"error": "Missing topic"}), 400
 
     try:
-        prompt = f"Find key legal insights, cases, or summaries for the topic: '{topic}'."
-        response = co.chat(
-            model="xlarge",
-            messages=[
-                {"role": "system", "content": "You are a legal research assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=400,
-            temperature=0.3
-        )
-        result = response.generations[0].text.strip()
-        return jsonify({"status": "success", "scouting_results": result})
-
+        articles = fetch_articles(topic.strip(), max_results=5)
+        return jsonify({"status": "success", "scouting_results": articles})
     except Exception as e:
         print("[ERROR] /api/scout failed:", e)
         return jsonify({"error": str(e)}), 500
