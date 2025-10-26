@@ -384,20 +384,18 @@ def api_scout():
 @app.route("/api/cases", methods=["GET"])
 def api_cases():
     """
-    Returns a list of cases.
-    - For logged-in web app users: returns only their cases.
-    - For Orchestrate agent or public access: returns all cases.
+    Returns a list of cases:
+    - Frontend (logged-in users): returns their cases.
+    - Orchestrate/public: returns all cases.
     """
     try:
-        # Check if the request has a logged-in user
-        user_id = session.get("user_id") if 'user_id' in session else None
-
-        if user_id:
-            # Fetch cases for the logged-in user (frontend)
+        if 'user_id' in session:
+            # Frontend: only user's cases
+            user_id = session.get("user_id")
             cases = get_cases_by_user(user_id)
         else:
-            # For Orchestrate / public: fetch all cases
-            cases = get_cases_by_user(None)  # assuming this returns all cases when None
+            # Orchestrate: all cases
+            cases = get_all_cases()
 
         case_list = [
             {"id": c["id"], "title": c["title"], "created_at": c["created_at"]}
@@ -409,6 +407,7 @@ def api_cases():
     except Exception as e:
         print("[ERROR] /api/cases failed:", e)
         return jsonify({"error": str(e)}), 500
+
 
 # ------------------------
 if __name__ == "__main__":
