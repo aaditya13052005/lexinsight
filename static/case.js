@@ -221,38 +221,40 @@ document.addEventListener("DOMContentLoaded", async () => {
     // -------------------
     // SCOUTING SEARCH
     // -------------------
-    scoutBtn.addEventListener("click", async () => {
-        const query = scoutInput.value.trim();
-        if (!query) return;
+  scoutBtn.addEventListener("click", async () => {
+    const topic = scoutInput.value.trim();
+    if (!topic) return;
 
-        scoutResults.innerHTML = "<li>Loading articles...</li>";
+    scoutResults.innerHTML = "<li>Loading articles...</li>";
 
-        try {
-            const res = await fetch("/scout", {
-                method: "POST",
-                headers: {"Content-Type":"application/json"},
-                body: JSON.stringify({ query })
+    try {
+        const res = await fetch("/api/scout", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ topic })
+        });
+        const data = await res.json();
+        scoutResults.innerHTML = "";
+
+        if (data.scouting_results && data.scouting_results.length > 0) {
+            data.scouting_results.forEach(item => {
+                const li = document.createElement("li");
+                li.classList.add("article-card");
+                li.innerHTML = `<h4><a href="${item.link}" target="_blank">${item.title}</a></h4>
+                                <p><b>Authors:</b> ${item.authors}</p>
+                                <p><b>Published:</b> ${item.published}</p>
+                                <p>${item.summary}</p>`;
+                scoutResults.appendChild(li);
             });
-            const data = await res.json();
-            scoutResults.innerHTML = "";
-
-            if (Array.isArray(data) && data.length > 0) {
-                data.forEach(item => {
-                    const li = document.createElement("li");
-                    li.classList.add("article-card");
-                    li.innerHTML = `<h4><a href="${item.link}" target="_blank">${item.title}</a></h4>
-                                    <p><b>Authors:</b> ${item.authors}</p>
-                                    <p><b>Published:</b> ${item.published}</p>`;
-                    scoutResults.appendChild(li);
-                });
-            } else {
-                scoutResults.innerHTML = "<li>No articles found</li>";
-            }
-        } catch (err) {
-            console.error("Scouting error:", err);
-            scoutResults.innerHTML = "<li>Error fetching articles</li>";
+        } else {
+            scoutResults.innerHTML = "<li>No articles found</li>";
         }
-    });
+    } catch (err) {
+        console.error("Scouting error:", err);
+        scoutResults.innerHTML = "<li>Error fetching articles</li>";
+    }
+});
+
 
     // -------------------
     // FLOATING AI CHAT ICON
