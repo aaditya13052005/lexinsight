@@ -6,7 +6,8 @@ import io
 import uuid
 import requests
 import os
-import feedparser
+import requests
+import xml.etree.ElementTree as ET
 from datetime import datetime
 
 # --- project helpers ---
@@ -352,35 +353,43 @@ def api_semantic_search():
 
 
 # 3️⃣ Research Scouting Agent
-
-
-
 def fetch_articles(topic, max_results=5):
     """
-    Fetch legal articles/news from Google News RSS (India, legal context) based on a topic.
+    Fetch legal articles/news from Google News RSS using only built-in libraries.
     """
     query = topic.replace(" ", "+")
     rss_url = f"https://news.google.com/rss/search?q={query}+legal&hl=en-IN&gl=IN&ceid=IN:en"
-    feed = feedparser.parse(rss_url)
+
+    try:
+        resp = requests.get(rss_url, timeout=10)
+        resp.raise_for_status()
+    except Exception as e:
+        print("[ERROR] Failed to fetch RSS:", e)
+        return []
+
+    root = ET.fromstring(resp.content)
+    items = root.findall(".//item")[:max_results]
     results = []
 
-    for entry in feed.entries[:max_results]:
-        published = getattr(entry, "published", "")
+    for item in items:
+        title = item.findtext("title", default="No title")
+        link = item.findtext("link", default="#")
+        summary = item.findtext("description", default="")
+        pub_date = item.findtext("pubDate", default="Unknown")
         try:
-            published_date = datetime.strptime(published, "%a, %d %b %Y %H:%M:%S %Z").strftime("%Y-%m-%d")
+            published_date = datetime.strptime(pub_date, "%a, %d %b %Y %H:%M:%S %Z").strftime("%Y-%m-%d")
         except Exception:
-            published_date = published
+            published_date = pub_date
 
         results.append({
-            "title": entry.title,
-            "link": entry.link,
-            "summary": getattr(entry, "summary", ""),
-            "authors": getattr(entry, "author", "Unknown"),
+            "title": title,
+            "link": link,
+            "summary": summary,
+            "authors": "Unknown",
             "published": published_date
         })
 
     return results
-
 @app.route("/api/scout", methods=["POST"])
 def api_scout():
     """
