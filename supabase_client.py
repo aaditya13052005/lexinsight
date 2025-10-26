@@ -36,6 +36,14 @@ def create_case(user_id: str, title: str):
     response = supabase.table("cases").insert(data).execute()
     return response.data[0] if response.data else None
 
+def get_all_cases():
+    """
+    Fetch all cases from the database (no user filter).
+    """
+    response = supabase.table("cases").select("*").execute()
+    return response.data or []
+
+
 # ------------------------
 # FILE FUNCTIONS
 # ------------------------
