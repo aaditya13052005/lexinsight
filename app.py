@@ -286,6 +286,46 @@ def summarize_pdf(case_id):
         print("[ERROR] Cohere summarization failed:", e)
         return jsonify({"error": "Error generating summary."}), 500
 
+@app.route("/api/summarize", methods=["POST"])
+def api_summarize():
+    """
+    Summarize a PDF directly via JSON POST.
+    Input:
+      {
+        "file_url": "https://example.com/legal.pdf"
+      }
+    Output:
+      {
+        "summary": "Summarized legal content..."
+      }
+    """
+    data = request.get_json()
+    file_url = data.get("file_url")
+
+    if not file_url:
+        return jsonify({"error": "file_url is required"}), 400
+
+    try:
+        # Download PDF file
+        pdf_resp = requests.get(file_url)
+        pdf_resp.raise_for_status()
+        pdf_bytes = io.BytesIO(pdf_resp.content).read()
+
+        # Extract text
+        text = extract_text_from_pdf_bytes(pdf_bytes)
+        if not text.strip():
+            return jsonify({"error": "No text found in PDF"}), 400
+
+        # Summarize using Cohere
+        final_summary = summarize_text_cohere(text)
+
+        return jsonify({"summary": final_summary})
+
+    except Exception as e:
+        print("[ERROR] /api/summarize failed:", e)
+        return jsonify({"error": str(e)}), 500
+
+
 # ------------------------
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False, port=5001)
