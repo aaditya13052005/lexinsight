@@ -286,43 +286,113 @@ def summarize_pdf(case_id):
         print("[ERROR] Cohere summarization failed:", e)
         return jsonify({"error": "Error generating summary."}), 500
 
+# ------------------------
+# PUBLIC API ENDPOINTS FOR IBM ORCHESTRATE
+# ------------------------
+
+from flask import request
+
+# 1️⃣ Summarizer Agent
 @app.route("/api/summarize", methods=["POST"])
 def api_summarize():
     """
-    Summarize a PDF directly via JSON POST.
-    Input:
-      {
-        "file_url": "https://example.com/legal.pdf"
-      }
-    Output:
-      {
-        "summary": "Summarized legal content..."
-      }
+    Accepts a PDF file and returns its summarized text using Cohere.
     """
-    data = request.get_json()
-    file_url = data.get("file_url")
-
-    if not file_url:
-        return jsonify({"error": "file_url is required"}), 400
+    file = request.files.get("pdf")
+    if not file:
+        return jsonify({"error": "No PDF provided"}), 400
 
     try:
-        # Download PDF file
-        pdf_resp = requests.get(file_url)
-        pdf_resp.raise_for_status()
-        pdf_bytes = io.BytesIO(pdf_resp.content).read()
-
-        # Extract text
-        text = extract_text_from_pdf_bytes(pdf_bytes)
+        file_bytes = file.read()
+        text = extract_text_from_pdf_bytes(file_bytes)
         if not text.strip():
-            return jsonify({"error": "No text found in PDF"}), 400
+            return jsonify({"error": "No readable text found in PDF"}), 400
 
-        # Summarize using Cohere
-        final_summary = summarize_text_cohere(text)
-
-        return jsonify({"summary": final_summary})
+        # Use your existing summarizer helper
+        summary = summarize_text_cohere(text)
+        return jsonify({
+            "status": "success",
+            "summary": summary
+        })
 
     except Exception as e:
         print("[ERROR] /api/summarize failed:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# 2️⃣ Semantic Search Agent
+@app.route("/api/semantic_search", methods=["POST"])
+def api_semantic_search():
+    """
+    Accepts text query -> returns top relevant document snippets.
+    """
+    data = request.get_json(force=True)
+    query = data.get("query", "").strip()
+    if not query:
+        return jsonify({"error": "Missing 'query'"}), 400
+
+    try:
+        query_emb = get_embedding(query)
+        from supabase_client import semantic_search
+        results = semantic_search(query_emb, top_k=5)
+
+        hits = [{
+            "filename": r.get("file_name"),
+            "file_url": r.get("file_url"),
+            "text_snippet": (r.get("text") or "")[:500]
+        } for r in results]
+
+        return jsonify({"status": "success", "results": hits})
+
+    except Exception as e:
+        print("[ERROR] /api/semantic_search failed:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# 3️⃣ Research Scouting Agent
+@app.route("/api/scout", methods=["POST"])
+def api_scout():
+    """
+    Searches legal news, judgments, or knowledge sources based on keyword.
+    (For now, uses Cohere API to simulate legal research.)
+    """
+    data = request.get_json(force=True)
+    topic = data.get("topic", "").strip()
+    if not topic:
+        return jsonify({"error": "Missing 'topic'"}), 400
+
+    try:
+        prompt = f"Find key legal insights, cases, or summaries for the topic: '{topic}'."
+        response = co.chat(
+            model="xlarge",
+            messages=[
+                {"role": "system", "content": "You are a legal research assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=400,
+            temperature=0.3
+        )
+        result = response.generations[0].text.strip()
+        return jsonify({"status": "success", "scouting_results": result})
+
+    except Exception as e:
+        print("[ERROR] /api/scout failed:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# 4️⃣ Case Manager Agent
+@app.route("/api/cases", methods=["GET"])
+def api_cases():
+    """
+    Publicly lists available cases (for demonstration).
+    """
+    try:
+        cases = get_cases_by_user(session.get("user_id", None)) if 'user_id' in session else []
+        case_list = [{"id": c["id"], "title": c["title"], "created_at": c["created_at"]} for c in cases]
+        return jsonify({"status": "success", "cases": case_list})
+
+    except Exception as e:
+        print("[ERROR] /api/cases failed:", e)
         return jsonify({"error": str(e)}), 500
 
 
