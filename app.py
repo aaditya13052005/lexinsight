@@ -24,8 +24,9 @@ from supabase_client import (
 )
 from semantic_processor import semantic_bp, process_and_store_pdf, get_embedding
 from hf_config import HF_TOKEN, HF_EMBED_URL, HF_SUMMARY_URL
-import cohere
-from hf_config import COHERE_API_KEY
+from cohere import ClientV2
+import hf_config
+
 
 
 # ------------------------
@@ -40,7 +41,8 @@ app.register_blueprint(semantic_bp)
 # ------------------------
 
 headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-co = cohere.Client(COHERE_API_KEY)
+co = ClientV2(api_key=hf_config.COHERE_API_KEY)
+
 
 
 
@@ -199,49 +201,41 @@ def search_pdf():
 # ------------------------
 # Cohere Summarization Helper
 # ------------------------
-
-def summarize_text_cohere(text: str, chunk_size=3000, max_tokens=300, temperature=0.3) -> str:
+def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3) -> str:
     """
-    Summarizes long text using Cohere Chat API.
-
-    Args:
-        text (str): Input text to summarize
-        chunk_size (int): Max characters per chunk to avoid API limits
-        max_tokens (int): Max tokens per summary chunk
-        temperature (float): Creativity level
-
-    Returns:
-        str: Combined summary
+    Summarizes long text using Cohere Chat API (v2 format).
     """
     try:
         text = text.strip()
         if not text:
             return "No text to summarize."
 
-        # Split text into manageable chunks
         chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
         summaries = []
 
-        for i, chunk in enumerate(chunks, 1):
-            print(f"[INFO] Summarizing chunk {i}/{len(chunks)}...")  # Optional logging
+        for i, chunk in enumerate(chunks, start=1):
+            print(f"[INFO] Summarizing chunk {i}/{len(chunks)}...")
+
             response = co.chat(
-                model="xlarge",
+                model="command-a-03-2025",  # ✅ use the latest chat model
                 messages=[
-                    {"role": "system", "content": "You are a helpful legal assistant."},
-                    {"role": "user", "content": f"Summarize the following text in concise and clear legal points:\n{chunk}"}
+                    {"role": "system", "content": "You are a helpful AI legal assistant that summarizes documents in bullet points."},
+                    {"role": "user", "content": f"Summarize this legal text in concise bullet points:\n\n{chunk}"}
                 ],
-                max_tokens=max_tokens,
                 temperature=temperature
             )
-            summaries.append(response.generations[0].text.strip())
 
-        # Combine all summaries into a final summary
+            # ✅ Correct field for Cohere v2
+            summaries.append(response.message.content[0].text.strip())
+
         final_summary = "\n".join(summaries)
         return final_summary
 
     except Exception as e:
         print("[ERROR] Cohere summarization failed:", e)
         return "Error generating summary."
+
+
 @app.route("/summarize_pdf/<case_id>", methods=["POST"])
 def summarize_pdf(case_id):
     if 'user_id' not in session:
