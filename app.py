@@ -203,9 +203,12 @@ def search_pdf():
 # ------------------------
 # Cohere Summarization Helper
 # ------------------------
-def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3) -> str:
+def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3, max_output_tokens=300) -> str:
     """
-    Summarizes long text using Cohere Chat API (v2 format).
+    Robust Cohere summarization wrapper:
+    - Tries multiple chat call signatures to handle different installed SDK versions.
+    - Tries multiple response extraction patterns.
+    - Returns a combined summary or an error string.
     """
     try:
         text = text.strip()
@@ -215,28 +218,114 @@ def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3) -> str:
         chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
         summaries = []
 
-        for i, chunk in enumerate(chunks, start=1):
-            print(f"[INFO] Summarizing chunk {i}/{len(chunks)}...")
+        for idx, chunk in enumerate(chunks, start=1):
+            print(f"[INFO] Summarizing chunk {idx}/{len(chunks)}...")
+            sys_msg = {"role": "system", "content": "You are a helpful AI legal assistant that summarizes documents in concise bullet points."}
+            user_msg = {"role": "user", "content": f"Summarize this legal text in concise bullet points:\n\n{chunk}"}
 
-            response = co.chat(
-                model="command-a-03-2025",  # ✅ use the latest chat model
-                messages=[
-                    {"role": "system", "content": "You are a helpful AI legal assistant that summarizes documents in bullet points."},
-                    {"role": "user", "content": f"Summarize this legal text in concise bullet points:\n\n{chunk}"}
-                ],
-                temperature=temperature
-            )
+            # Try variants of the chat call to support different SDKs
+            last_exc = None
+            resp = None
 
-            # ✅ Correct field for Cohere v2
-            summaries.append(response.message.content[0].text.strip())
+            # Variant A: modern v2-style: messages=[...], max_output_tokens
+            try:
+                resp = co.chat(
+                    model="command-a-03-2025",
+                    messages=[sys_msg, user_msg],
+                    temperature=temperature,
+                    max_output_tokens=max_output_tokens
+                )
+            except TypeError as e:
+                last_exc = e
+            except Exception as e:
+                # non-TypeError (e.g., network) — record and try fallback
+                last_exc = e
 
-        final_summary = "\n".join(summaries)
+            # Variant B: older/alternate SDKs: messages=... but different token arg
+            if resp is None:
+                try:
+                    resp = co.chat(
+                        model="command-a-03-2025",
+                        messages=[sys_msg, user_msg],
+                        temperature=temperature,
+                        max_tokens=max_output_tokens
+                    )
+                except Exception as e:
+                    last_exc = e
+                    resp = None
+
+            # Variant C: some SDKs expect single 'message' (not 'messages')
+            if resp is None:
+                try:
+                    resp = co.chat(
+                        model="command-a-03-2025",
+                        message={"role": "user", "content": f"Summarize this legal text in concise bullet points:\n\n{chunk}"},
+                        temperature=temperature,
+                        max_tokens=max_output_tokens
+                    )
+                except Exception as e:
+                    last_exc = e
+                    resp = None
+
+            # If still no response, log and return error
+            if resp is None:
+                print("[ERROR] Cohere: all chat call variants failed. Last exception:", last_exc)
+                return "Error generating summary."
+
+            # Try to extract text from the response using known response shapes
+            summary_text = None
+            try:
+                # v2-style object: resp.message.content[0].text
+                if hasattr(resp, "message") and getattr(resp.message, "content", None):
+                    # content may be a list of objects with 'text'
+                    content = resp.message.content
+                    if isinstance(content, (list, tuple)) and len(content) > 0 and hasattr(content[0], "text"):
+                        summary_text = content[0].text
+                    elif isinstance(content, str):
+                        summary_text = content
+                # older style: resp.generations[0].text
+                if not summary_text and hasattr(resp, "generations"):
+                    gens = resp.generations
+                    if isinstance(gens, (list, tuple)) and len(gens) > 0:
+                        maybe = gens[0]
+                        if isinstance(maybe, dict) and "text" in maybe:
+                            summary_text = maybe["text"]
+                        elif hasattr(maybe, "text"):
+                            summary_text = maybe.text
+                # some SDKs return dict-like
+                if not summary_text and isinstance(resp, dict):
+                    # try content in nested structure
+                    if "message" in resp and isinstance(resp["message"], dict):
+                        c = resp["message"].get("content")
+                        if isinstance(c, list) and len(c) > 0:
+                            item = c[0]
+                            if isinstance(item, dict) and "text" in item:
+                                summary_text = item["text"]
+                        elif isinstance(c, str):
+                            summary_text = c
+                    if not summary_text and "generations" in resp and isinstance(resp["generations"], list):
+                        g0 = resp["generations"][0]
+                        if isinstance(g0, dict) and "text" in g0:
+                            summary_text = g0["text"]
+                # fallback to str(resp)
+                if not summary_text:
+                    summary_text = str(resp)
+            except Exception as e:
+                print("[ERROR] Failed to extract summary text from Cohere response:", e)
+                summary_text = None
+
+            if not summary_text:
+                print("[ERROR] Cohere returned a response but we couldn't parse a summary. Raw resp:", resp)
+                return "Error generating summary."
+
+            summaries.append(summary_text.strip())
+
+        final_summary = "\n\n".join(summaries)
         return final_summary
 
     except Exception as e:
-        print("[ERROR] Cohere summarization failed:", e)
+        print("[ERROR] summarize_text_cohere failed:", e)
         return "Error generating summary."
-
 
 @app.route("/summarize_pdf/<case_id>", methods=["POST"])
 def summarize_pdf(case_id):
@@ -247,44 +336,23 @@ def summarize_pdf(case_id):
     if not file:
         return jsonify({"error": "No PDF provided"}), 400
 
-    file_bytes = file.read()
-    text = extract_text_from_pdf_bytes(file_bytes)
-
-    if not text.strip():
-        return jsonify({"error": "No text found in PDF"}), 400
-
     try:
-        # --- Chunk text to avoid size limits ---
-        chunk_size = 3000  # characters per chunk
-        chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
+        file_bytes = file.read()
+        text = extract_text_from_pdf_bytes(file_bytes)
+        if not text.strip():
+            return jsonify({"error": "No text found in PDF"}), 400
 
-        summaries = []
+        summary = summarize_text_cohere(text)
+        if not summary or summary.startswith("Error generating summary"):
+            print("[ERROR] summarize_text_cohere returned an error.")
+            return jsonify({"error": "Error generating summary."}), 500
 
-        for idx, chunk in enumerate(chunks, start=1):
-            print(f"[INFO] Summarizing chunk {idx}/{len(chunks)}...")
-            
-            # ✅ Correct Cohere Chat API usage
-            response = co.chat(
-                model="xlarge",  # use the correct chat model
-                messages=[
-                    {"role": "system", "content": "You are a helpful legal assistant."},
-                    {"role": "user", "content": f"Summarize the following text in concise and clear legal points:\n{chunk}"}
-                ],
-                max_tokens=300,
-                temperature=0.3
-            )
-
-            # ✅ Access text correctly
-            summaries.append(response.generations[0].text.strip())
-
-        # Combine all chunk summaries
-        final_summary = "\n".join(summaries)
-
-        return jsonify({"summary": final_summary})
+        return jsonify({"summary": summary})
 
     except Exception as e:
-        print("[ERROR] Cohere summarization failed:", e)
-        return jsonify({"error": "Error generating summary."}), 500
+        print("[ERROR] Summarization route failed:", e)
+        return jsonify({"error": str(e)}), 500
+
 
 # ------------------------
 # PUBLIC API ENDPOINTS FOR IBM ORCHESTRATE
