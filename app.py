@@ -223,16 +223,17 @@ def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3, max_outpu
         for idx, chunk in enumerate(chunks, start=1):
             print(f"[INFO] Summarizing chunk {idx}/{len(chunks)}...")
 
-            prompt = f"You are a helpful legal AI assistant. Summarize the following legal text into concise bullet points:\n\n{chunk}"
-
             resp = co.chat(
-                model="command-a-03-2025",
-                message=prompt,
+                model="command-r-plus-08-2024",
+                messages=[
+                    {"role": "system", "content": "You are a helpful legal AI assistant."},
+                    {"role": "user", "content": f"Summarize the following legal text into concise bullet points:\n\n{chunk}"}
+                ],
                 temperature=temperature,
                 max_output_tokens=max_output_tokens
             )
 
-            summaries.append(resp.text.strip())
+            summaries.append(resp.message.content[0].text.strip())
 
         return "\n\n".join(summaries)
 
