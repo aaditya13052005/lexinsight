@@ -210,7 +210,7 @@ def search_pdf():
 # ------------------------
 def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3, max_output_tokens=300) -> str:
     """
-    Summarizes text using the Cohere Chat API (v5.20.0 and newer).
+    Summarizes text using Cohere Chat API (v5.x syntax).
     """
     try:
         text = text.strip()
@@ -223,22 +223,31 @@ def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3, max_outpu
         for idx, chunk in enumerate(chunks, start=1):
             print(f"[INFO] Summarizing chunk {idx}/{len(chunks)}...")
 
+            prompt = (
+                "You are a helpful legal AI assistant. "
+                "Summarize the following legal text into concise bullet points:\n\n" + chunk
+            )
+
             resp = co.chat(
                 model="command-r-plus-08-2024",
                 messages=[
                     {"role": "system", "content": "You are a helpful legal AI assistant."},
-                    {"role": "user", "content": f"Summarize the following legal text into concise bullet points:\n\n{chunk}"}
+                    {"role": "user", "content": prompt}
                 ],
                 temperature=temperature,
                 max_output_tokens=max_output_tokens
             )
 
-            summaries.append(resp.message.content[0].text.strip())
+            # ✅ Cohere v5 format
+            summary_part = resp.message.content[0].text.strip()
+            summaries.append(summary_part)
 
         return "\n\n".join(summaries)
 
     except Exception as e:
-        print("[ERROR] Cohere summarization failed:", str(e))
+        import traceback
+        print("[ERROR] Cohere summarization failed:", e)
+        traceback.print_exc()
         return f"Error generating summary: {str(e)}"
 
 
