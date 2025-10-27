@@ -6,10 +6,11 @@ import ast
 from flask import Blueprint, request, jsonify
 from supabase_client import insert_document_chunk, supabase
 import os
+from config import COHERE_API_KEY
 import cohere
 
-COHERE_API_KEY = os.getenv("COHERE_API_KEY", "gW5znzO9PiCv7SqqcKcekbgmOEM6TI8uw96XJoeE")
 co = cohere.Client(COHERE_API_KEY)
+
 
 
 # -------------------------------
