@@ -20,6 +20,7 @@ from supabase_client import (
     save_file_record,
     get_files_by_case,
     download_file_bytes
+    get_all_cases
 )
 from semantic_processor import semantic_bp, process_and_store_pdf, get_embedding
 from hf_config import HF_TOKEN, HF_EMBED_URL, HF_SUMMARY_URL
