@@ -41,12 +41,7 @@ app = Flask(__name__)
 app.secret_key = "supersecret_change_this_to_something_random"
 app.register_blueprint(semantic_bp)
 
-# ------------------------
-# Hugging Face API setup (for embeddings + summarization)
-# ------------------------
 
-headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-co = Client(api_key=hf_config.COHERE_API_KEY)
 
 
 app.config['DEBUG'] = True
