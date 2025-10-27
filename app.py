@@ -197,7 +197,7 @@ def search_pdf():
 # ------------------------
 def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3, max_output_tokens=300) -> str:
     """
-    Summarizes text using Cohere Chat API (v5.x syntax).
+    Summarizes text using Cohere Chat API (compatible with v5.5.8).
     """
     try:
         text = text.strip()
@@ -215,18 +215,15 @@ def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3, max_outpu
                 "Summarize the following legal text into concise bullet points:\n\n" + chunk
             )
 
+            # ✅ Correct syntax for cohere 5.5.8
             resp = co.chat(
                 model="command-r-plus-08-2024",
-                messages=[
-                    {"role": "system", "content": "You are a helpful legal AI assistant."},
-                    {"role": "user", "content": prompt}
-                ],
+                message=prompt,
                 temperature=temperature,
                 max_output_tokens=max_output_tokens
             )
 
-            # ✅ Cohere v5 format
-            summary_part = resp.message.content[0].text.strip()
+            summary_part = resp.text.strip()
             summaries.append(summary_part)
 
         return "\n\n".join(summaries)
@@ -276,7 +273,6 @@ def summarize_pdf(case_id):
         print("[ERROR] Exception in summarize_pdf:", e)
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
 
 # ------------------------
 # PUBLIC API ENDPOINTS FOR IBM ORCHESTRATE
