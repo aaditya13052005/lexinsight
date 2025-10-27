@@ -45,6 +45,8 @@ headers = {"Authorization": f"Bearer {HF_TOKEN}"}
 co = Client(api_key=hf_config.COHERE_API_KEY)
 
 
+app.config['DEBUG'] = True
+app.config['PROPAGATE_EXCEPTIONS'] = True
 
 
 
@@ -329,28 +331,41 @@ def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3, max_outpu
 
 @app.route("/summarize_pdf/<case_id>", methods=["POST"])
 def summarize_pdf(case_id):
+    print("\n[DEBUG] /summarize_pdf called for case_id:", case_id)
     if 'user_id' not in session:
+        print("[DEBUG] Unauthorized request — no session user_id.")
         return jsonify({"error": "Unauthorized"}), 401
 
     file = request.files.get("pdf")
     if not file:
+        print("[DEBUG] No PDF file in request.")
         return jsonify({"error": "No PDF provided"}), 400
 
     try:
         file_bytes = file.read()
+        print(f"[DEBUG] PDF received: {len(file_bytes)} bytes")
+
         text = extract_text_from_pdf_bytes(file_bytes)
+        print(f"[DEBUG] Extracted {len(text)} characters of text from PDF")
+
         if not text.strip():
+            print("[DEBUG] No text found in PDF.")
             return jsonify({"error": "No text found in PDF"}), 400
 
         summary = summarize_text_cohere(text)
+        print(f"[DEBUG] Summary result: {summary[:200]}..." if summary else "[DEBUG] No summary returned")
+
         if not summary or summary.startswith("Error generating summary"):
             print("[ERROR] summarize_text_cohere returned an error.")
             return jsonify({"error": "Error generating summary."}), 500
 
+        print("[DEBUG] Summary generated successfully.")
         return jsonify({"summary": summary})
 
     except Exception as e:
-        print("[ERROR] Summarization route failed:", e)
+        import traceback
+        print("[ERROR] Exception in summarize_pdf:", e)
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
