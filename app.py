@@ -2,11 +2,13 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 import fitz  # PyMuPDF
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file
+from werkzeug.security import generate_password_hash, check_password_hash
+import fitz  # PyMuPDF
 import io
 import uuid
 import requests
 import os
-import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -23,11 +25,13 @@ from supabase_client import (
     get_all_cases
 )
 from semantic_processor import semantic_bp, process_and_store_pdf, get_embedding
-from hf_config import HF_TOKEN, HF_EMBED_URL, HF_SUMMARY_URL
 from cohere import Client
 
-import hf_config
+# --- Cohere API Key Setup ---
+COHERE_API_KEY = os.getenv("COHERE_API_KEY", "gW5znzO9PiCv7SqqcKcekbgmOEM6TI8uw96XJoeE")
 
+# --- Cohere Client ---
+co = Client(api_key=COHERE_API_KEY)
 
 
 # ------------------------
