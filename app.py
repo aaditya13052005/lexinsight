@@ -2,14 +2,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 import fitz  # PyMuPDF
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file
-from werkzeug.security import generate_password_hash, check_password_hash
-import fitz  # PyMuPDF
-import io
-import uuid
-import requests
-import os
-import xml.etree.ElementTree as ET
+import io, uuid, requests, os, xml.etree.ElementTree as ET
 from datetime import datetime
 
 # --- project helpers ---
@@ -26,20 +19,15 @@ from supabase_client import (
 )
 from semantic_processor import semantic_bp, process_and_store_pdf, get_embedding
 from cohere import Client
+from config import COHERE_API_KEY  # only the API key now
 
-# --- Cohere API Key Setup ---
-COHERE_API_KEY = os.getenv("COHERE_API_KEY", "gW5znzO9PiCv7SqqcKcekbgmOEM6TI8uw96XJoeE")
-
-# --- Cohere Client ---
-co = Client(api_key=COHERE_API_KEY)
-
-
-# ------------------------
-# Flask setup
-# ------------------------
+# --- Flask setup ---
 app = Flask(__name__)
-app.secret_key = "supersecret_change_this_to_something_random"
+app.secret_key = "supersecret_change_this_to_something_random"  # stays here
 app.register_blueprint(semantic_bp)
+
+# --- Cohere client ---
+co = Client(api_key=COHERE_API_KEY)
 
 
 
