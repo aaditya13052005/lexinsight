@@ -24,7 +24,8 @@ from supabase_client import (
 )
 from semantic_processor import semantic_bp, process_and_store_pdf, get_embedding
 from hf_config import HF_TOKEN, HF_EMBED_URL, HF_SUMMARY_URL
-from cohere import ClientV2
+from cohere import Client
+
 import hf_config
 
 
@@ -41,7 +42,8 @@ app.register_blueprint(semantic_bp)
 # ------------------------
 
 headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-co = ClientV2(api_key=hf_config.COHERE_API_KEY)
+co = Client(api_key=hf_config.COHERE_API_KEY)
+
 
 
 
