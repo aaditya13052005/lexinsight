@@ -210,7 +210,7 @@ def search_pdf():
 # ------------------------
 def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3, max_output_tokens=300) -> str:
     """
-    Summarizes text using the Cohere Chat API with the 'messages' parameter.
+    Summarizes text using the Cohere Chat API (v5.20.0 and newer).
     """
     try:
         text = text.strip()
@@ -223,29 +223,23 @@ def summarize_text_cohere(text: str, chunk_size=3000, temperature=0.3, max_outpu
         for idx, chunk in enumerate(chunks, start=1):
             print(f"[INFO] Summarizing chunk {idx}/{len(chunks)}...")
 
-            # Define the messages for the conversation. This is the correct modern format.
-            messages = [
-                {"role": "system", "content": "You are a helpful AI legal assistant that summarizes documents in concise bullet points."},
-                {"role": "user", "content": f"Summarize this legal text in concise bullet points:\n\n{chunk}"}
-            ]
+            prompt = f"You are a helpful legal AI assistant. Summarize the following legal text into concise bullet points:\n\n{chunk}"
 
-            # Make the API call using the 'messages' parameter
             resp = co.chat(
                 model="command-a-03-2025",
-                messages=messages,
+                message=prompt,
                 temperature=temperature,
                 max_output_tokens=max_output_tokens
             )
 
-            # For the modern SDK (v5+), the text is typically accessed via the `text` attribute of the response object.
-            summary = resp.text
-            summaries.append(summary)
+            summaries.append(resp.text.strip())
 
         return "\n\n".join(summaries)
 
     except Exception as e:
         print("[ERROR] Cohere summarization failed:", str(e))
         return f"Error generating summary: {str(e)}"
+
 
 @app.route("/summarize_pdf/<case_id>", methods=["POST"])
 def summarize_pdf(case_id):
