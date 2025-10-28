@@ -201,6 +201,7 @@ def search_pdf():
                 "filename": r.get("file_name"),
                 "file_url": r.get("file_url"),
                 "text_snippet": (r.get("text") or "")[:500]
+                "page_number": r.get("page_number")
             })
 
         return jsonify({"hits": hits})
@@ -232,6 +233,7 @@ def api_semantic_search():
             "filename": r.get("file_name"),
             "file_url": r.get("file_url"),
             "text_snippet": (r.get("text") or "")[:500]
+            "page_number": r.get("page_number")
         } for r in results]
 
         return jsonify({"status": "success", "results": hits})
