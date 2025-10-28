@@ -459,7 +459,8 @@ def api_cases():
 @app.route("/ai_chat/<case_id>", methods=["POST"])
 def ai_chat(case_id):
     """
-    Legal AI chat powered by Hugging Face InLegalBERT model.
+    AI Chat powered by InLegalBERT (Hugging Face Inference API)
+    Uses a fill-mask approach to provide legal term explanations.
     """
     try:
         data = request.get_json(force=True)
@@ -468,16 +469,36 @@ def ai_chat(case_id):
         if not user_query:
             return jsonify({"error": "Empty query"}), 400
 
-        print(f"[DEBUG] InLegalBERT query: {user_query}")
-        answer = query_hf_inlegalbert(user_query)
+        print(f"[DEBUG] User query: {user_query}")
 
-        if not answer or "Error" in answer:
+        # 🔹 Create a legal-context prompt for fill-mask
+        prompt = f"In Indian law, {user_query} means [MASK]."
+
+        HF_API_URL = "https://router.huggingface.co/hf-inference/models/law-ai/InLegalBERT"
+        HF_TOKEN = os.environ.get("HF_TOKEN") or "hf_your_token_here"
+        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+
+        payload = {"inputs": prompt}
+        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=15)
+        result = response.json()
+
+        print("[DEBUG] HF response:", result)
+
+        # 🔹 Extract top predictions
+        if isinstance(result, list) and len(result) > 0:
+            top = result[0]
+            predicted_token = top.get("token_str", "").strip()
+            confidence = round(float(top.get("score", 0)) * 100, 2)
+            answer = f"{user_query} refers to {predicted_token} (confidence: {confidence}%)."
+        else:
             answer = "Sorry, I couldn’t find a reliable legal definition."
 
         return jsonify({"answer": answer})
+
     except Exception as e:
         print("[ERROR] /ai_chat failed:", e)
         return jsonify({"error": str(e)}), 500
+
 
 # ------------------------
 if __name__ == "__main__":
