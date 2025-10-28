@@ -36,7 +36,7 @@ app.config['DEBUG'] = True
 app.config['PROPAGATE_EXCEPTIONS'] = True
 
 
-
+# -------------------------------------------------------------------
     
 @app.route("/files_by_case/<case_id>", methods=["GET"])
 def files_by_case(case_id):
@@ -45,6 +45,37 @@ def files_by_case(case_id):
     files = get_files_by_case(case_id)
     files_list = [{"file_name": f["file_name"], "file_url": f["file_url"], "id": f["id"]} for f in files]
     return jsonify({"files": files_list})
+
+# --------------------------------------------------------------
+
+
+HF_TOKEN = "hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXX"  # 👈 Replace with your HF token
+HF_API_URL = "https://router.huggingface.co/hf-inference/models/law-ai/InLegalBERT"
+HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
+
+
+def query_hf_inlegalbert(prompt: str):
+    """
+    Query the InLegalBERT model via Hugging Face API.
+    Works without local model hosting.
+    """
+    try:
+        payload = {"inputs": prompt}
+        response = requests.post(HF_API_URL, headers=HEADERS, json=payload, timeout=15)
+        response.raise_for_status()
+        result = response.json()
+
+        # Handle standard Hugging Face inference formats
+        if isinstance(result, list) and len(result) > 0:
+            return result[0].get("generated_text") or result[0].get("sequence") or "No result."
+        elif isinstance(result, dict):
+            return result.get("generated_text", "No output.")
+        else:
+            return "No response from InLegalBERT."
+    except Exception as e:
+        print("[ERROR] InLegalBERT request failed:", e)
+        return f"Error querying InLegalBERT: {str(e)}"
+
 
 
 
@@ -422,6 +453,31 @@ def api_cases():
         print("[ERROR] /api/cases failed:", e)
         return jsonify({"error": str(e)}), 500
 
+# ------------------------
+# AI Chat — powered by InLegalBERT
+# ------------------------
+@app.route("/ai_chat/<case_id>", methods=["POST"])
+def ai_chat(case_id):
+    """
+    Legal AI chat powered by Hugging Face InLegalBERT model.
+    """
+    try:
+        data = request.get_json(force=True)
+        user_query = data.get("query", "").strip()
+
+        if not user_query:
+            return jsonify({"error": "Empty query"}), 400
+
+        print(f"[DEBUG] InLegalBERT query: {user_query}")
+        answer = query_hf_inlegalbert(user_query)
+
+        if not answer or "Error" in answer:
+            answer = "Sorry, I couldn’t find a reliable legal definition."
+
+        return jsonify({"answer": answer})
+    except Exception as e:
+        print("[ERROR] /ai_chat failed:", e)
+        return jsonify({"error": str(e)}), 500
 
 # ------------------------
 if __name__ == "__main__":
