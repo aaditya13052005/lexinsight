@@ -259,40 +259,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     // -------------------
     // FLOATING AI CHAT ICON
     // -------------------
-    const chatIcon = document.getElementById("ai-chat-icon");
-    const chatBox = document.getElementById("ai-chat-box");
-    const aiInput = document.getElementById("ai-input");
-    const aiSendBtn = document.getElementById("ai-send-btn");
-    const aiResponse = document.getElementById("ai-response");
+    
+// -------------------
+// FLOATING AI CHAT ICON — InLegalBERT Powered
+// -------------------
+const chatIcon = document.getElementById("ai-chat-icon");
+const chatBox = document.getElementById("ai-chat-box");
+const aiInput = document.getElementById("ai-input");
+const aiSendBtn = document.getElementById("ai-send-btn");
+const aiResponse = document.getElementById("ai-response");
 
-    chatIcon?.addEventListener("click", () => {
-        chatBox.classList.toggle("hidden");
-    });
+chatIcon?.addEventListener("click", () => {
+    chatBox.classList.toggle("hidden");
+});
 
-    aiSendBtn?.addEventListener("click", async () => {
-        const query = aiInput.value.trim();
-        if (!query) return;
+aiSendBtn?.addEventListener("click", async () => {
+    const query = aiInput.value.trim();
+    if (!query) return;
 
-        aiResponse.innerHTML += `<div><b>You:</b> ${query}</div>`;
-        aiInput.value = "";
+    aiResponse.innerHTML += `<div><b>You:</b> ${query}</div>`;
+    aiInput.value = "";
 
-        try {
-            const res = await fetch(`/ai_chat/${caseId}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query })
-            });
+    try {
+        const caseId = document.getElementById("case-id").value;
+        const res = await fetch(`/ai_chat/${caseId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query })
+        });
 
-            const data = await res.json();
-            if (data.answer) {
-                aiResponse.innerHTML += `<div><b>Bot:</b> ${data.answer}</div>`;
-            } else {
-                aiResponse.innerHTML += `<div style="color:red;">Error: ${data.error || "Unknown"}</div>`;
-            }
-            aiResponse.scrollTop = aiResponse.scrollHeight;
-        } catch (err) {
-            console.error("AI chat error:", err);
-            aiResponse.innerHTML += `<div style="color:red;">Error sending message</div>`;
+        const data = await res.json();
+        if (data.answer) {
+            aiResponse.innerHTML += `<div><b>LexInsight:</b> ${data.answer}</div>`;
+        } else {
+            aiResponse.innerHTML += `<div style="color:red;">Error: ${data.error || "Unknown"}</div>`;
         }
-    });
+        aiResponse.scrollTop = aiResponse.scrollHeight;
+    } catch (err) {
+        console.error("AI chat error:", err);
+        aiResponse.innerHTML += `<div style="color:red;">Error sending message</div>`;
+    }
 });
