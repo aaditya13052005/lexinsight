@@ -266,6 +266,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 // -------------------
 // FLOATING AI CHAT ICON — FIXED VERSION
 // -------------------
+// -------------------
+// FLOATING AI CHAT ICON — FIXED
+// -------------------
 const chatIcon = document.getElementById("ai-chat-icon");
 const chatBox = document.getElementById("ai-chat-box");
 const aiInput = document.getElementById("ai-input");
@@ -273,11 +276,7 @@ const aiSendBtn = document.getElementById("ai-send-btn");
 const aiResponse = document.getElementById("ai-response");
 
 chatIcon?.addEventListener("click", () => {
-    if (chatBox.classList.contains("visible")) {
-        chatBox.classList.remove("visible");
-    } else {
-        chatBox.classList.add("visible");
-    }
+    chatBox.classList.toggle("visible");
 });
 
 aiSendBtn?.addEventListener("click", async () => {
@@ -307,3 +306,4 @@ aiSendBtn?.addEventListener("click", async () => {
         aiResponse.innerHTML += `<div style="color:red;">Error sending message</div>`;
     }
 });
+
