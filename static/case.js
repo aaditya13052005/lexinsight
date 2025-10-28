@@ -134,13 +134,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         // OPEN PDF
         // -------------------
         function openPdf(url, pageNumber = 1, searchTerm = "") {
-            if (!url) return;
-            const encodedUrl = encodeURIComponent(url);
-            const timestamp = Date.now();
-            let viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodedUrl}#page=${pageNumber}`;
-            if (searchTerm) viewerUrl += `&search=${encodeURIComponent(searchTerm)}&highlightAll=true`;
-            pdfContainer.innerHTML = `<iframe key="${timestamp}" src="${viewerUrl}" width="100%" height="800px" style="border:none;"></iframe>`;
-        }
+    if (!url) return;
+    const encodedUrl = encodeURIComponent(url);
+    const timestamp = Date.now();
+    let viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodedUrl}#page=${pageNumber}`;
+    if (searchTerm) viewerUrl += `&search=${encodeURIComponent(searchTerm)}&highlightAll=true`;
+    pdfContainer.innerHTML = `<iframe key="${timestamp}" src="${viewerUrl}" width="100%" height="800px" style="border:none;"></iframe>`;
+}
+
 
         fileList.addEventListener("click", (e) => {
             if (e.target && e.target.tagName === "LI") openPdf(e.target.dataset.url);
@@ -204,16 +205,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const data = await res.json();
                 semanticResults.innerHTML = "";
 
-                if (data.results && data.results.length > 0) {
-                    data.results.forEach(result => {
-                        const li = document.createElement("li");
-                        li.innerHTML = `<b>File:</b> ${result.file_name || result.file_id}<br>
-                                        <b>Page:</b> ${result.page_number}<br>
-                                        ${ (result.chunk||"").slice(0, 300) }...<hr>`;
-                        semanticResults.appendChild(li);
-                    });
-                } else semanticResults.innerHTML = "<li>No semantic matches found</li>";
-            } catch (err) {
+              if (data.results && data.results.length > 0) {
+    data.results.forEach(result => {
+        const li = document.createElement("li");
+        li.dataset.url = result.file_url;
+        li.dataset.page = result.page_number || 1;
+        li.dataset.snippet = result.text_snippet || "";
+        li.innerHTML = `
+            <b>${result.file_name}</b> — Page ${result.page_number}<br>
+            <small>${(result.text_snippet || "").slice(0, 300)}...</small>
+        `;
+        li.style.cursor = "pointer";
+        li.addEventListener("click", () => {
+            openPdf(result.file_url, result.page_number || 1, result.text_snippet || "");
+        });
+        semanticResults.appendChild(li);
+    });
+} else {
+    semanticResults.innerHTML = "<li>No semantic matches found</li>";
+} catch (err) {
                 console.error("Semantic search error:", err);
                 semanticResults.innerHTML = "<li>Error performing semantic search</li>";
             }
