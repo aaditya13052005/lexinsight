@@ -49,7 +49,7 @@ def files_by_case(case_id):
 # --------------------------------------------------------------
 
 
-HF_TOKEN = "hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXX"  # 👈 Replace with your HF token
+HF_TOKEN = "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"  # 👈 Replace with your HF token
 HF_API_URL = "https://router.huggingface.co/hf-inference/models/law-ai/InLegalBERT"
 HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
 
