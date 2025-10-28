@@ -200,7 +200,7 @@ def search_pdf():
             hits.append({
                 "filename": r.get("file_name"),
                 "file_url": r.get("file_url"),
-                "text_snippet": (r.get("text") or "")[:500]
+                "text_snippet": (r.get("text") or "")[:500],
                 "page_number": r.get("page_number")
             })
 
@@ -232,7 +232,7 @@ def api_semantic_search():
         hits = [{
             "filename": r.get("file_name"),
             "file_url": r.get("file_url"),
-            "text_snippet": (r.get("text") or "")[:500]
+            "text_snippet": (r.get("text") or "")[:500],
             "page_number": r.get("page_number")
         } for r in results]
 
