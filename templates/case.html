@@ -74,13 +74,7 @@
                 <ul id="scout-results"></ul>
             </div>
 
-            <!-- SUMMARIZE PDF -->
-            <div class="pane" id="summarize">
-                <h3>Legal PDF Summarization</h3>
-                <form id="summarize-form" enctype="multipart/form-data">
-                    <input type="file" name="pdf" accept="application/pdf" required>
-                    <button type="submit">Generate Summary</button>
-                </form>
+            
 
                 <h4>Summary:</h4>
                 <div id="summary-result" class="summary-box">No summary yet.</div>
@@ -95,14 +89,7 @@
     </div>
 </div>
 
-<!-- FLOATING AI CHAT ICON -->
-<div id="ai-chat-icon">💬</div>
-<div id="ai-chat-box" class="hidden">
-    <h4>AI Chat</h4>
-    <textarea id="ai-input" placeholder="Ask about this case..."></textarea>
-    <button id="ai-send-btn">Send</button>
-    <div id="ai-response"></div>
-</div>
+
 
 <input type="hidden" id="case-id" value="{{ case_id }}">
 
