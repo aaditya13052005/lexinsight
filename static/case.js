@@ -263,6 +263,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 // -------------------
 // FLOATING AI CHAT ICON — InLegalBERT Powered
 // -------------------
+// -------------------
+// FLOATING AI CHAT ICON — FIXED VERSION
+// -------------------
 const chatIcon = document.getElementById("ai-chat-icon");
 const chatBox = document.getElementById("ai-chat-box");
 const aiInput = document.getElementById("ai-input");
@@ -270,7 +273,11 @@ const aiSendBtn = document.getElementById("ai-send-btn");
 const aiResponse = document.getElementById("ai-response");
 
 chatIcon?.addEventListener("click", () => {
-    chatBox.classList.toggle("hidden");
+    if (chatBox.classList.contains("visible")) {
+        chatBox.classList.remove("visible");
+    } else {
+        chatBox.classList.add("visible");
+    }
 });
 
 aiSendBtn?.addEventListener("click", async () => {
