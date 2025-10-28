@@ -239,8 +239,8 @@ ul li:hover {
     gap: 8px;
     z-index: 101;
 }
-#ai-chat-box.hidden {
-    display: none;
+#ai-chat-box.visible {
+  display: flex; /* show when toggled */
 }
 #ai-chat-box h4 {
     margin: 0;
