@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         // -------------------
-        // SUMMARIZATION
+        // SUMMARIZATION (keeps existing behavior)
         // -------------------
         const summarizeForm = document.getElementById("summarize-form");
         let summaryBox = document.getElementById("summary-result");
@@ -134,14 +134,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         // OPEN PDF
         // -------------------
         function openPdf(url, pageNumber = 1, searchTerm = "") {
-    if (!url) return;
-    const encodedUrl = encodeURIComponent(url);
-    const timestamp = Date.now();
-    let viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodedUrl}#page=${pageNumber}`;
-    if (searchTerm) viewerUrl += `&search=${encodeURIComponent(searchTerm)}&highlightAll=true`;
-    pdfContainer.innerHTML = `<iframe key="${timestamp}" src="${viewerUrl}" width="100%" height="800px" style="border:none;"></iframe>`;
-}
-
+            if (!url) return;
+            const encodedUrl = encodeURIComponent(url);
+            const timestamp = Date.now();
+            let viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodedUrl}#page=${pageNumber}`;
+            if (searchTerm) viewerUrl += `&search=${encodeURIComponent(searchTerm)}&highlightAll=true`;
+            pdfContainer.innerHTML = `<iframe key="${timestamp}" src="${viewerUrl}" width="100%" height="800px" style="border:none;"></iframe>`;
+        }
 
         fileList.addEventListener("click", (e) => {
             if (e.target && e.target.tagName === "LI") openPdf(e.target.dataset.url);
@@ -171,9 +170,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                         const li = document.createElement("li");
                         li.dataset.url = hit.file_url;
                         li.innerHTML = `<strong>${hit.filename}</strong><br><small>${(hit.text_snippet||"").slice(0,200)}...</small>`;
+                        li.style.cursor = "pointer";
+                        li.addEventListener("click", () => {
+                            openPdf(hit.file_url, hit.page_number || 1, query);
+                        });
                         resultList.appendChild(li);
                     });
-                    openPdf(data.hits[0].file_url, 1, query);
+                    // open first result automatically
+                    openPdf(data.hits[0].file_url, data.hits[0].page_number || 1, query);
                 } else {
                     resultList.innerHTML = "<li>No matches found</li>";
                     pdfContainer.innerHTML = "<p>No matches found</p>";
@@ -189,7 +193,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
         // -------------------
-        // SEMANTIC SEARCH
+        // SEMANTIC SEARCH (FIXED)
         // -------------------
         if (semanticBtn) semanticBtn.addEventListener("click", async () => {
             const query = semanticInput.value.trim();
@@ -197,7 +201,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             semanticResults.innerHTML = "<li>Loading results...</li>";
 
             try {
-                const res = await fetch("/semantic_search", {
+                // endpoint corrected to match backend
+                const res = await fetch("/api/semantic_search", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ case_id: caseId, query, top_k: 5 })
@@ -205,25 +210,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const data = await res.json();
                 semanticResults.innerHTML = "";
 
-              if (data.results && data.results.length > 0) {
-    data.results.forEach(result => {
-        const li = document.createElement("li");
-        li.dataset.url = result.file_url;
-        li.dataset.page = result.page_number || 1;
-        li.dataset.snippet = result.text_snippet || "";
-        li.innerHTML = `
-            <b>${result.file_name}</b> — Page ${result.page_number}<br>
-            <small>${(result.text_snippet || "").slice(0, 300)}...</small>
-        `;
-        li.style.cursor = "pointer";
-        li.addEventListener("click", () => {
-            openPdf(result.file_url, result.page_number || 1, result.text_snippet || "");
-        });
-        semanticResults.appendChild(li);
-    });
-} else {
-    semanticResults.innerHTML = "<li>No semantic matches found</li>";
-} catch (err) {
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(result => {
+                        const li = document.createElement("li");
+                        li.dataset.url = result.file_url;
+                        li.dataset.page = result.page_number || 1;
+                        li.dataset.snippet = result.text_snippet || "";
+                        li.innerHTML = `
+                            <b>${result.filename}</b> — Page ${result.page_number || 1}<br>
+                            <small>${(result.text_snippet || "").slice(0, 300)}...</small>
+                        `;
+                        li.style.cursor = "pointer";
+                        li.addEventListener("click", () => {
+                            openPdf(result.file_url, result.page_number || 1, result.text_snippet || "");
+                        });
+                        semanticResults.appendChild(li);
+                    });
+                } else {
+                    semanticResults.innerHTML = "<li>No semantic matches found</li>";
+                }
+            } catch (err) {
                 console.error("Semantic search error:", err);
                 semanticResults.innerHTML = "<li>Error performing semantic search</li>";
             }
@@ -317,7 +323,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     aiInput.value = "";
                     aiResponse.scrollTop = aiResponse.scrollHeight;
 
-                    // call backend ai_chat endpoint
+                    // call backend ai_chat endpoint (assumes route exists)
                     const res = await fetch(`/ai_chat/${caseId}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
